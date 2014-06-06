@@ -1,10 +1,11 @@
 <?php
 
+/**Maybe needed for debuging with FirePHP*/
 //ob_start();
 
-include 'vendor/autoload.php';
 include_once 'config/config.php';
-include 'lib/QueryResponseParser.php';
+include 'vendor/autoload.php';
+include 'lib/Parsers/FaceBookEventParser.php';
 
 /**
  * As we are going to store the facebook session object in the $_SESSION
@@ -21,7 +22,9 @@ use Facebook\FacebookRequest;
 use Facebook\GraphUser;
 use Facebook\FacebookRequestException;
 use Facebook\FacebookRedirectLoginHelper;
-use QueHacemos\QueryResponseParser;
+use QueHacemos\Parsers\FaceBookEventParser;
+
+FacebookSession::setDefaultApplication(APP_ID, APP_SECRET);
 
 // see if we have a session stored in $_Session
 if( isset($_SESSION['fb_session'])) {
@@ -71,10 +74,10 @@ if ($session) {
             ))->execute()->getGraphObject();
     try {
       fb("we'll give it a go");
-      $QRP = new QueryResponseParser($eventsQueryResponse);
+      FaceBookEventParser::parseFaceBookQueryResponse($eventsQueryResponse);
       fb("and we're out of there!");
     } catch (\Exception $e){
-      fb::error("QueryResponseParser: " . $e);
+      fb::error("FaceBookEventParser: " . $e);
     }
   } catch (FacebookRequestException $e) {
     // The Graph API returned an error
