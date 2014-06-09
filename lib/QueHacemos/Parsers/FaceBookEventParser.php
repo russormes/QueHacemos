@@ -2,11 +2,6 @@
 
 namespace QueHacemos\Parsers;
 
-//include_once (__ROOT__ . '/config/config.php');
-include(__ROOT__ . '/vendor/autoload.php');
-
-//use Facebook\GraphUser;
-
 /**
  * Class FaceBookEventParser
  * @package QueHacemos

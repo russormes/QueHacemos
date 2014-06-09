@@ -3,9 +3,9 @@
 /**Maybe needed for debuging with FirePHP*/
 //ob_start();
 
-include_once 'config/config.php';
+include_once 'config/global.php';
 include 'vendor/autoload.php';
-include 'lib/Parsers/FaceBookEventParser.php';
+//include 'lib/Parsers/FaceBookEventParser.php';
 
 /**
  * As we are going to store the facebook session object in the $_SESSION
