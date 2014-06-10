@@ -45,7 +45,7 @@ class Event
    */
   public function __construct($dataAsArray)
   {
-    if (checkDataArray($dataAsArray)) {
+    if (Event::checkDataArray($dataAsArray)) {
       $this->dataArray = $dataAsArray;
     } else {
       throw new \Exception("Event class constructor argument is not " .

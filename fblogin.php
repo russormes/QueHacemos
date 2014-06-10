@@ -1,7 +1,7 @@
 <?php
 
 /**Maybe needed for debuging with FirePHP*/
-//ob_start();
+ob_start();
 
 include_once 'config/global.php';
 include 'vendor/autoload.php';
@@ -70,7 +70,8 @@ if ($session) {
             ))->execute()->getGraphObject();
     //fb($likes);
     $eventsQueryResponse = (new FacebookRequest($session,
-            'GET', '/me?fields=likes.fields(name, events.fields(name, cover))'
+            'GET', '/me?fields=likes.fields(name, location,
+                               events.fields(name, cover, location))'
             ))->execute()->getGraphObject();
     try {
       fb("we'll give it a go");
