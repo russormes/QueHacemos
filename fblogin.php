@@ -5,7 +5,6 @@ ob_start();
 
 include_once 'config/global.php';
 include 'vendor/autoload.php';
-//include 'lib/Parsers/FaceBookEventParser.php';
 
 /**
  * As we are going to store the facebook session object in the $_SESSION
@@ -16,7 +15,7 @@ include 'vendor/autoload.php';
 
 session_start();
 
-// Set up the Facebook namespace. Similar to import in true OO languages. 
+// Set up the Facebook namespace. Similar to import in Java. 
 use Facebook\FacebookSession;
 use Facebook\FacebookRequest;
 use Facebook\GraphUser;
@@ -60,26 +59,43 @@ if ($session) {
    //Logged in.
    //Store the fb session object in $_SESSION
   $_SESSION['fb_session'] = $session;
+  $all_events = array();
   //DEBUG
   //fb($_SESSION);
   try {
-    $me = (new FacebookRequest($session, 'GET', '/me'
+    $request_string = '/me';
+    $me = (new FacebookRequest($session, 'GET', $request_string
             ))->execute()->getGraphObject(GraphUser::className());
     //fb($me);
-    $likes = (new FacebookRequest($session, 'GET', '/me/likes'
+    $request_string = '/me/likes';
+    $likes = (new FacebookRequest($session, 'GET', $request_string
             ))->execute()->getGraphObject();
-    //fb($likes);
-    $eventsQueryResponse = (new FacebookRequest($session,
-            'GET', '/me?fields=likes.fields(name, location,
-                               events.fields(name, cover, location))'
-            ))->execute()->getGraphObject();
-    try {
-      fb("we'll give it a go");
-      FaceBookEventParser::parseFaceBookQueryResponse($eventsQueryResponse);
-      fb("and we're out of there!");
-    } catch (\Exception $e){
-      fb::error("FaceBookEventParser: " . $e);
-    }
+    $request_string =
+          '/me/likes?fields=name,location,events.fields(name,+cover,+location)';
+    $events_query_response = (new FacebookRequest($session,
+            'GET', $request_string))->execute()->getGraphObject();
+    $all_events =
+        FaceBookEventParser::parseFaceBookQueryResponse($events_query_response);
+    fb($events_query_response, "Events from pages I like: ");
+    while(in_array("paging", $events_query_response->getPropertyNames()) &&
+       in_array("next",
+            $events_query_response->getProperty('paging')->getPropertyNames())
+    ){
+      $paging_cursors =
+          $events_query_response->getProperty('paging')->getProperty('cursors');
+      $request_string_next = $request_string . "&after=" .
+                                        $paging_cursors->getProperty('after'); 
+      $events_query_response = (new FacebookRequest($session,
+              'GET', $request_string_next))->execute()->getGraphObject();
+      fb($events_query_response, "Next events: ");
+      try {
+        $all_events = array_merge($all_events,
+                                  FaceBookEventParser::parseFaceBookQueryResponse(
+                                                    $events_query_response));
+      } catch (\Exception $e){
+        fb::error("FaceBookEventParser: " . $e);
+      }
+    }//End while
   } catch (FacebookRequestException $e) {
     // The Graph API returned an error
     echo "The Graph API returned an error: " . $e;
@@ -91,5 +107,5 @@ if ($session) {
   //We don't have a valid session so ask the user to login.
   echo '<a href="' . $helper->getLoginUrl(array('user_likes')) . '">Login with Facebook</a>';
 }
-
+fb($all_events, "All events");
 ?>

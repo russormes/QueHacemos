@@ -20,7 +20,8 @@ class FaceBookEventParser
    *
    * @param GraphObject $response
    *
-   * @return array An associate array of Quehacemos\Event objects
+   * @return array An associate array of arrays of Quehacemos\Event objects
+   * indexed by page name. 
    */
   public static function parseFaceBookQueryResponse($response)
   {
@@ -31,22 +32,13 @@ class FaceBookEventParser
     }
     
     $events_by_page = array();
-    
-    fb($response, "Graph Object as returned from fb: ");
-    //fb($response->getProperty('likes'), "Graph Object containing my likes: ");
-    fb($response->getProperty('likes')->getProperty('data'),
-                             "Graph Object containing my likes data array: ");
-    fb($response->getProperty('likes')->getProperty('data')->getProperty('6'),
-                             "Graph Object for fb page: ");
-    fb($response->getProperty('likes')->getProperty('data')->getProperty('6')->getProperty('events')->getProperty('data'),
-                             "Graph Object for fb events for a page: ");
-    
+    $session = $_SESSION['fb_session'];
     
     //We want just the array of pages from the Graph Object that is returned
     //and we need to know how many pages we have so we can step through
     //the array and call one page at a time. 
     
-    $pages = $response->getProperty('likes')->getProperty('data');
+    $pages = $response->getProperty('data');
     $no_of_pages = count($pages->getPropertyNames());
     
     //Step through the pages
@@ -59,35 +51,42 @@ class FaceBookEventParser
         $no_of_events = count($events->asArray());
         $events_by_page[$current_page->getProperty('name')] = array();
         for ($k=0; $k<$no_of_events; $k++){
-          $parsed_event = array();
           $current_event = $events->getProperty($k);
-          $parsed_event['name'] = $current_event->getProperty('name');
-          $parsed_event['where'] = $current_event->getProperty('location');
-          $parsed_event['fb_id'] = $current_event->getProperty('id');
-          $cover = $current_event->getProperty('cover');
-          if ($cover) {
-            $parsed_event['photo_url'] =
-              $current_event->getProperty('cover')->getProperty('source');
-          } else {
-            $parsed_event['photo_url'] = 'none';
-          }
-          $parsed_event['when'] =
-              array('start_time' => $current_event->getProperty('start_time'));
-          try {
-            $events_by_page[$current_page->getProperty('name')][] =
-                                          new Event($parsed_event);
-          } catch(\Exception $e){
-            fb($e, \FirePHP::ERROR);
-          }//end try catch
+          $events_by_page[$current_page->getProperty('name')][] =
+                        FaceBookEventParser::buildEventObject($current_event);
         }//end for
       }//end if ($current_page_events)
     }//end step through pages
     
     //Debugging. To be removed.
-    fb($events_by_page, "Events array:");
     echo print_r($events_by_page, true) . "</br>";
+    return $events_by_page;
   
   }//parseFaceBookQueryResponse
-
+  
+  private static function buildEventObject($fb_event) {
+    $parsed_event = array();
+    $parsed_event['name'] = $fb_event->getProperty('name');
+    $parsed_event['where'] = $fb_event->getProperty('location');
+    $parsed_event['fb_id'] = $fb_event->getProperty('id');
+    $parsed_event['when'] =
+                   array('start_time' => $fb_event->getProperty('start_time'));
+    $cover = $fb_event->getProperty('cover');
+    if ($cover) {
+      $parsed_event['photo_url'] =
+                        $fb_event->getProperty('cover')->getProperty('source');
+    } else {
+      $parsed_event['photo_url'] = 'none';
+    }
+    
+    try {
+      $event_object = new Event($parsed_event);
+    } catch(\Exception $e){
+      fb($e, \FirePHP::ERROR);
+    }//end try catch
+    
+    return $event_object;
+  
+  }
 }
 ?>
